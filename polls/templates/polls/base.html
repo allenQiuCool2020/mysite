@@ -1,0 +1,18 @@
+<p>
+	<a href="{% url 'polls:home' %}">Welcome To Poll Website</a>
+	{% if user.is_superuser or user.is_staff %}
+		<a href="{% url 'polls:question_create' %}" title="">Create Question</a>
+    {% else %}
+		Hello, {{ user.username }}
+	    <a href="{% url 'polls:logout' %}" title="">log out</a>
+    	<a href="{% url 'polls:register' %}" title="">register</a>
+    	<a href="{% url 'polls:login' %}" title="">log in</a>
+	{% endif %}    
+</p>
+
+
+{% include "polls/messages_display.html" %}
+
+{% block content %}
+    
+{% endblock content %}

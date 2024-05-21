@@ -1,0 +1,18 @@
+{% extends "polls/base.html" %}
+
+{% block content %}
+<h1>Question Detail</h1>
+<p>
+   Question ID:  {{ question_id }} 
+</p>
+
+<p>
+    Question text:  {{ question_text }}
+</p>
+<br>
+
+{% comment %} <a href="{% url 'polls:question_update' question_id %}">Edit Question</a> {% endcomment %}
+<br>
+<a href="{% url 'polls:home' %}">Back To Home</a>
+
+{% endblock content %}
