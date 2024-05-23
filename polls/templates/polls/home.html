@@ -2,12 +2,18 @@
 {% block content %}
 
 {% if questions %}
+<form action="" method="POST" enctype='multipart/form-data'>
+    {% csrf_token %}
+    {{ form.as_p}}
+    <input type="submit" value="create">
+    </form>
 <ul>
     {% for question in questions  %}
     <li>
         <a href="{% url 'polls:detail' question.id %}">{{ question.id}} | {{ question.question_text }} | {{ question.pub_date }}</a>
         <a href="{% url 'polls:question_update' question.id %}">Edit Question</a>
         <a href="{% url 'polls:question_delete' question.id %}">Delete Question</a>
+        <a href="{% url 'polls:choice_detail' question.id %}"><input type="button" value='choice_detail'></a>
         <a href="{% url 'polls:create_choices' question.id %}"><input type="submit" value='Create Choices'></a>
     </li>
     {% endfor %}

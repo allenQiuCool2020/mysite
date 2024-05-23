@@ -48,8 +48,20 @@ def register(request):
 
 
 def home(request):
-    questions = Question.objects.all()
-    context = {"questions": questions}
+    questions = Question.objects.all().order_by("-pub_date")
+    form = QuestionForm()
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        print(request.POST)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.owner = request.user
+            instance.save()
+            messages.success(request, "Successfully Created A Question")
+            return HttpResponseRedirect(reverse('polls:home'))
+        else:
+            messages.error(request, "Not Successfully Created")
+    context = {"questions": questions, "form": form}
     return render(request, "polls/home.html", context)
 
 def question_create(request):
@@ -107,18 +119,6 @@ def question_delete(request, question_id):
     messages.success(request, ('This Question Had Been Deleted'))
     return HttpResponseRedirect(reverse('polls:home'))
 
-# def question_choices_list(request, question_id):
-#     question = get_object_or_404(Question, pk=question_id)
-#     try:
-#         selected_choice = question.choice_set.get(pk=request.POST["choice"])
-#         print(request.POST)
-#         print(selected_choice)
-#     except (KeyError, Choice.DoesNotExist):
-    
-#     else:
-    
-#     return 
-
 def choices_create(request, question_id):
     if not request.user.is_staff or not request.user.is_superuser:
         raise Http404
@@ -132,10 +132,41 @@ def choices_create(request, question_id):
                 instance = form_choices.save(commit=False)
                 instance.question = question
                 instance.save()
-                # return HttpResponseRedirect('/polls/')
                 return HttpResponseRedirect(reverse('polls:question_detail', args=[question.id]))
     context = {'form_choices': form_choices}
     return render(request, "polls/choices_form.html", context)
+
+def question_choice_detail(request, question_id):
+    qs = Question.objects.prefetch_related("choice_set").get(pk=question_id)
+    choices = qs.choice_set.all()
+    print(question_id)
+    question = get_object_or_404(Question, pk=question_id)
+    context = {
+        "choices": choices,
+        "question": question,
+    }
+    return render(request, "polls/choice_detail.html", context)
+
+def choice_update(request, choice_id):
+    if not request.user.is_staff or not request.user.is_superuser:
+        raise Http404
+    choice = get_object_or_404(Choice, pk=choice_id)
+    choice_obj = Choice.objects.select_related("question").get(pk=choice_id)
+    question_id = choice_obj.question.id
+    form = ChoicesForm(request.POST or None, instance=choice)
+    if form.is_valid():
+        instance = form.save(commit=False)
+        instance.save()
+        # message success
+        messages.success(request, "Choice Updated")
+        return HttpResponseRedirect(reverse('polls:choice_detail', args=[question_id]))
+    context = {
+        "choice": choice,
+        "form": form,
+    }
+    return render(request, "polls/question_update.html", context)
+
+
 
 
 

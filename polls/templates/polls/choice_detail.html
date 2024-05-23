@@ -1,0 +1,22 @@
+{% extends "polls/base.html" %}
+
+{% block content %}
+<h1>Choice Detail</h1>
+<p>
+   Question ID:  {{ question.id }} 
+</p>
+
+<p>
+    Question text:  {{ question.question_text }}
+</p>
+<br>
+{% for choice in choices%}
+        <li>choice {{ choice.id }} -- {{ choice.choice_text }}</li> 
+        <a href="{% url 'polls:choice_update' choice.id %}">Edit Choice</a>
+{% endfor %}
+
+
+<br>
+<a href="{% url 'polls:home' %}">Back To Home</a>
+
+{% endblock content %}
