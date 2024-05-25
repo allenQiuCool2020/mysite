@@ -14,6 +14,7 @@ from .views import (
     detail,
     vote,
     results,
+    add_choice,
 )
 
 app_name = "polls"
@@ -34,3 +35,8 @@ urlpatterns = [
     path("<int:question_id>/vote/", vote, name="vote"),
 ]
 
+htmx_urlpatterns = [
+    path('add-choice/', add_choice, name='add-choice')
+]
+
+urlpatterns += htmx_urlpatterns

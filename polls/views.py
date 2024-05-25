@@ -1,4 +1,4 @@
-from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Question, Choice
 from django.db.models import F, Q
@@ -12,8 +12,6 @@ from .forms import QuestionForm, ChoicesForm
 def login_user(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect(reverse("polls:home"))
-
-
     if request.method == 'POST':
         print(request.POST)
         username = request.POST["username"]
@@ -46,7 +44,6 @@ def register(request):
 
     return render(request, 'polls/register.html', {'form': form})
 
-
 def home(request):
     questions = Question.objects.all().order_by("-pub_date")
     form = QuestionForm()
@@ -64,9 +61,10 @@ def home(request):
     context = {"questions": questions, "form": form}
     return render(request, "polls/home.html", context)
 
+@login_required
 def question_create(request):
     if not request.user.is_staff or not request.user.is_superuser:
-        raise Http404
+        return HttpResponseForbidden("You do not have permission to create question.")
     # if not request.user.is_authenticated():
     #     raise Http404
     form = QuestionForm()
@@ -96,6 +94,7 @@ def question_detail(request, question_id):
     }
     return render(request, "polls/question_detail.html", context)
 
+@login_required
 def question_update(request, question_id):
     if not request.user.is_staff or not request.user.is_superuser:
         raise Http404
@@ -113,17 +112,20 @@ def question_update(request, question_id):
     }
     return render(request, "polls/question_update.html", context)
 
+@login_required
 def question_delete(request, question_id):
+    if not request.user.is_staff or not request.user.is_superuser:
+        raise Http404
     question = Question.objects.get(pk=question_id)
     question.delete()
     messages.success(request, ('This Question Had Been Deleted'))
     return HttpResponseRedirect(reverse('polls:home'))
 
+@login_required
 def choices_create(request, question_id):
     if not request.user.is_staff or not request.user.is_superuser:
-        raise Http404
+        return HttpResponseForbidden("You do not have permission to create choice.")
     question = get_object_or_404(Question, pk=question_id)
-
     form_choices = ChoicesForm()
     if request.method == 'POST':
             form_choices = ChoicesForm(request.POST)
@@ -132,9 +134,10 @@ def choices_create(request, question_id):
                 instance = form_choices.save(commit=False)
                 instance.question = question
                 instance.save()
-                return HttpResponseRedirect(reverse('polls:question_detail', args=[question.id]))
+                return HttpResponseRedirect(reverse('polls:choice_detail', args=[question.id]))
     context = {'form_choices': form_choices}
     return render(request, "polls/choices_form.html", context)
+
 
 def question_choice_detail(request, question_id):
     qs = Question.objects.prefetch_related("choice_set").get(pk=question_id)
@@ -147,6 +150,7 @@ def question_choice_detail(request, question_id):
     }
     return render(request, "polls/choice_detail.html", context)
 
+@login_required
 def choice_update(request, choice_id):
     if not request.user.is_staff or not request.user.is_superuser:
         raise Http404
@@ -166,10 +170,6 @@ def choice_update(request, choice_id):
     }
     return render(request, "polls/question_update.html", context)
 
-
-
-
-
 def detail(request, question_id):
     try:
         question = Question.objects.get(pk=question_id)
@@ -177,7 +177,7 @@ def detail(request, question_id):
         raise Http404("Question does not exist")
     return render(request, "polls/detail.html", {"question": question})
 
-
+@login_required
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     try:
@@ -203,10 +203,29 @@ def vote(request, question_id):
         # user hits the Back button.
     return HttpResponseRedirect(reverse("polls:results", args=(question.id,)))
        
-
+@login_required
 def results(request, pk):
     question = get_object_or_404(Question, pk=pk)
     context = {
         "question": question,
     }
     return render(request, "polls/results.html", context)
+
+# view for HTMX
+
+def add_choice(request, question_id):
+    if not request.user.is_staff or not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have permission to create choice.")
+    question = get_object_or_404(Question, pk=question_id)
+    form_choices = ChoicesForm()
+    if request.method == 'POST':
+            form_choices = ChoicesForm(request.POST)
+            print(request.POST)
+            if form_choices.is_valid():
+                instance = form_choices.save(commit=False)
+                instance.question = question
+                instance.save()
+                return HttpResponseRedirect(reverse('polls:question_detail', args=[question.id]))
+    context = {'form_choices': form_choices,
+               "question": question}
+    return render(request, "partials/choices_list.html", context)

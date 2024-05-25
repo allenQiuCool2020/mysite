@@ -1,18 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
+{% extends "polls/base.html" %}
+
+{% block content %}
     <div>
         <h1>Create Choices</h1>
         <form action="" method="POST" enctype='multipart/form-data'>
         {% csrf_token %}
         {{ form_choices.as_p}}
         <input type="submit" value="create">
+        {% comment %} <button hx-post="{% url 'polls:add-choice' %}" hx-target="#choice-list" type="submit">Create</button> {% endcomment %}
         </form>
     </div>
-</body>
-</html>
+    <br>
+
+    <div id="choice-list">
+        {% include "partials/choice_list.html" %}
+    </div>
+
+{% endblock content %}
